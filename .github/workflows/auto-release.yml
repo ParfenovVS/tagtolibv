@@ -1,0 +1,65 @@
+name: Auto release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.17.0"
+
+      - name: Build
+        run: |
+          cd tagtolibv 
+          go build -o bin/tagtolibv
+
+      - name: "Upload Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: tagtolibv
+          path: tagtolibv/bin/tagtolibv
+          retention-days: 5
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Download a single artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tagtolibv
+    
+      - name: Deploy asset
+        run: |
+          gh api \
+          --method POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          /repos/ParfenovVS/mobile-devops/releases \
+          -f tag_name='v0.0.1' \
+          -f target_commitish='master' \
+          -f name='v0.0.1' \
+          -f body='tagtolibv v0.0.1' \
+          -F draft=false \
+          -F prerelease=false \
+          -F generate_release_notes=false
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy asset
+        run: |
+          gh api \
+          --method POST \
+          -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          --hostname HOSTNAME \
+          /repos/ParfenovVS/mobile-devops/releases/RELEASE_ID/assets?name=tagtolibv \
+          -f '@tagtolibv'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
