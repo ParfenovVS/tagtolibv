@@ -1,0 +1,19 @@
+name: Auto test
+
+on:
+  push:
+    branches: main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.17.0"
+
+      - name: Unit-tests
+        run: go test -v >> $GITHUB_STEP_SUMMARY
