@@ -17,8 +17,8 @@ jobs:
 
       - name: Git preparation
         run: |
-          git config user.email "test@test.com"
-          git config user.name "Test"
+          git config --global user.email "test@test.com"
+          git config --global user.name "Test"
 
       - name: Unit-tests
         run: go test -v >> $GITHUB_STEP_SUMMARY
