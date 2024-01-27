@@ -28,10 +28,15 @@ func NewTagToLibResult(success bool, tag string, libVer string, reason string) (
 	return ttlr, nil
 }
 
+var supportedFormats = []string{
+	"json", "md",
+}
+
 func main() {
 	wd := flag.String("path", "", "Path to repository")
 	lib := flag.String("lib", "", "Library name to be found")
 	lim := flag.Int("limit", 1, "Number of tags to check (from latest to oldest)")
+	format := flag.String("format", "json", "Output format (json / md)")
 
 	flag.Parse()
 
@@ -41,6 +46,17 @@ func main() {
 
 	if *lim <= 0 {
 		log.Fatal("Limit cannot be <= 0")
+	}
+
+	formatFound := false
+	for _, f := range supportedFormats {
+		if *format == f {
+			formatFound = true
+			break
+		}
+	}
+	if !formatFound {
+		log.Fatal("Supported formats: json, md")
 	}
 
 	if len(*wd) != 0 {
@@ -73,10 +89,24 @@ func main() {
 		result = append(result, *ttlr)
 	}
 
-	j, err := json.MarshalIndent(result, "", "  ")
-	if err != nil {
-		log.Fatal(string(j))
+	switch *format {
+	case "json":
+		j, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			log.Fatal(string(j))
+		}
+
+		fmt.Println(string(j))
+	case "md":
+		fmt.Printf("| Tag | %s version |\n", *lib)
+		fmt.Println("| --- | --- |")
+		for _, r := range result {
+			if r.Success {
+				fmt.Printf("| %s | %s |\n", r.Tag, r.LibVer)
+			} else {
+				fmt.Printf("| %s | **fail:** %s |\n", r.Tag, r.Reason)
+			}
+		}
 	}
 
-	fmt.Println(string(j))
 }
